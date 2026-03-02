@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gaurav Sharma | The Final Ascent</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Noto+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { accent: '#a100ff', brandDark: '#0a0a0c', brandPurple: '#11081f' },
+                    fontFamily: { display: ['Montserrat', 'sans-serif'], body: ['Noto Sans', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #0a0a0c; color: white; overflow: hidden; margin: 0; }
+        #gameCanvas { 
+            display: block; margin: 0 auto; 
+            background: linear-gradient(180deg, #11081f 0%, #0a0a0c 100%);
+            background-image: radial-gradient(circle at 20% 20%, rgba(161, 0, 255, 0.1) 0%, transparent 40%), url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h1v1H0z' fill='%23a100ff' fill-opacity='0.05'/%3E%3C/svg%3E");
+            border-radius: 1.5rem; border: 1px solid rgba(161, 0, 255, 0.2);
+        }
+        .glass-card { background: rgba(20, 10, 35, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .milestone-popup {
+            position: absolute; top: 10%; left: 50%; transform: translate(-50%, -20px);
+            width: 90%; max-width: 380px; z-index: 100; opacity: 0; pointer-events: none;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .milestone-active { opacity: 1; transform: translate(-50%, 0); }
+        #final-portfolio { display: none; overflow-y: auto; height: 100vh; background: #0a0a0c; scroll-behavior: smooth; }
+        .reveal-section { opacity: 0; transform: translateY(30px); transition: all 0.8s ease-out; }
+        .revealed { opacity: 1; transform: translateY(0); }
+    </style>
+</head>
+<body>
+
+    <div id="game-wrapper" class="relative flex items-center justify-center min-h-screen p-4">
+        <div id="milestone-ui" class="milestone-popup glass-card p-6 rounded-3xl border-l-4 border-l-accent shadow-2xl">
+            <div id="m-tag" class="text-accent text-[10px] font-black uppercase tracking-widest mb-1">Career Achievement</div>
+            <h3 id="m-title" class="text-lg font-display font-800 text-white">Milestone</h3>
+            <p id="m-desc" class="text-slate-400 text-xs mt-2"></p>
+        </div>
+
+        <div class="relative rounded-3xl overflow-hidden shadow-2xl">
+            <canvas id="gameCanvas" width="400" height="650"></canvas>
+            
+            <div id="start-overlay" class="absolute inset-0 flex flex-col items-center justify-center bg-black/95 z-20 text-center p-6">
+                <img src="https://uploads.onecompiler.io/44ekyxpck/44em3zn7f/1000164931.webp" class="w-28 h-28 rounded-full border-2 border-accent mb-6 object-cover shadow-2xl">
+                <h1 class="text-3xl font-display font-800 text-accent mb-2 uppercase italic tracking-tighter">Gaurav's Ascent</h1>
+                <p class="text-slate-400 text-sm mb-8 px-10 italic">Reach 3000m to unlock the Full Enterprise Portfolio.</p>
+                <button id="start-btn" class="px-12 py-4 bg-accent rounded-full font-800 text-white tracking-widest hover:brightness-110 active:scale-95 transition-all">START ASCENT</button>
+            </div>
+
+            <div id="fail-screen" class="absolute inset-0 z-40 hidden flex items-center justify-center bg-black/80 backdrop-blur-md p-6 text-center">
+                <div class="glass-card p-8 rounded-3xl border-t-4 border-t-red-500 w-full max-w-[280px]">
+                    <h2 class="text-2xl font-display font-800 mb-2">CLIMB FAILED</h2>
+                    <p id="checkpoint-msg" class="text-slate-400 text-sm mb-6"></p>
+                    <button id="retry-btn" class="w-full py-4 bg-white text-black rounded-full font-bold active:scale-95 transition-all">TRY AGAIN</button>
+                </div>
+            </div>
+
+            <div class="absolute bottom-6 inset-x-0 flex justify-between px-8 lg:hidden z-30">
+                <div id="leftBtn" class="w-20 h-20 bg-white/5 rounded-2xl glass-card flex items-center justify-center text-3xl select-none active:bg-accent/20">←</div>
+                <div id="rightBtn" class="w-20 h-20 bg-white/5 rounded-2xl glass-card flex items-center justify-center text-3xl select-none active:bg-accent/20">→</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="final-portfolio">
+        <section class="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-brandPurple relative">
+            <img src="https://uploads.onecompiler.io/44ekyxpck/44em3zn7f/1000164931.webp" class="w-48 h-48 rounded-3xl border-4 border-accent mb-8 shadow-2xl relative z-10 transition-transform hover:scale-105 duration-500">
+            <h1 class="text-6xl font-display font-900 mb-4 tracking-tighter">Gaurav Sharma</h1>
+            <p class="text-accent text-2xl font-semibold mb-8 uppercase tracking-widest">Associate Software Engineer @ Accenture</p>
+            <div class="flex gap-6 relative z-10">
+                <a href="mailto:mrgauravsharma0786@gmail.com" class="px-10 py-4 bg-white text-black rounded-xl font-black uppercase tracking-tighter">Email Me</a>
+                <a href="https://linkedin.com/in/Gauravs0786" target="_blank" class="px-10 py-4 bg-accent rounded-xl font-black uppercase tracking-tighter shadow-lg shadow-purple-500/30">LinkedIn</a>
+            </div>
+            <div class="mt-20 animate-bounce text-slate-500 uppercase text-xs tracking-widest font-black">Scroll for Details</div>
+        </section>
+
+        <main class="max-w-6xl mx-auto px-8 py-32 space-y-40">
+            <section class="reveal-section space-y-12">
+                <h2 class="text-4xl font-display font-800 flex items-center gap-6"><span class="w-12 h-1 bg-accent"></span> About Me</h2>
+                <div class="grid md:grid-cols-5 gap-12 items-start">
+                    <div class="md:col-span-3 space-y-6">
+                        <p class="text-2xl text-brand-light leading-snug font-light italic border-l-4 border-accent pl-8">
+                            "Focused on continuous growth, problem-solving, and building meaningful digital solutions."
+                        </p>
+                        <p class="text-lg text-slate-400 leading-relaxed">
+                            Associate Software Engineer with a passion for scalable tech. My philosophy is driven by curiosity and discipline, aiming to create real-world impact through technology.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="reveal-section space-y-12">
+                <h2 class="text-4xl font-display font-800 flex items-center gap-6"><span class="w-12 h-1 bg-accent"></span> Expertise & Skills</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div class="glass-card p-10 rounded-[2rem] border-t-4 border-accent">
+                        <h3 class="text-2xl font-bold mb-4">Engineering</h3>
+                        <p class="text-slate-400">Agile delivery and optimized development within enterprise frameworks at Accenture.</p>
+                    </div>
+                    <div class="glass-card p-10 rounded-[2rem] border-t-4 border-accent">
+                        <h3 class="text-2xl font-bold mb-4">SEO & AI</h3>
+                        <p class="text-slate-400">Technical SEO auditing and AI-driven automation for enterprise workflows.</p>
+                    </div>
+                    <div class="glass-card p-10 rounded-[2rem] border-t-4 border-accent">
+                        <h3 class="text-2xl font-bold mb-4">Psychology</h3>
+                        <p class="text-slate-400">Research on Creative Expression, behavioral analysis, and academic reporting.</p>
+                    </div>
+                </div>
+            </section>
+<section class="reveal-section py-20 text-center space-y-8">
+    <h2 class="text-4xl md:text-6xl font-display font-900 text-accent tracking-tighter">CONGRATULATIONS</h2>
+    <p class="text-slate-500 uppercase tracking-[0.5em] text-sm font-bold">The Summit is reached.</p>
+    <div class="pt-12">
+        <button onclick="location.reload()" class="text-slate-400 hover:text-accent text-xs font-black uppercase underline tracking-widest">Restart</button>
+    </div>
+</section>
+               
+        </main>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d');
+        let audioCtx;
+        const keys = {};
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function sfx(f, t, d) {
+            if (!audioCtx || audioCtx.state !== 'running') return;
+            const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+            o.type = t; o.frequency.setValueAtTime(f, audioCtx.currentTime);
+            g.gain.setValueAtTime(0.08, audioCtx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + d);
+            o.connect(g); g.connect(audioCtx.destination);
+            o.start(); o.stop(audioCtx.currentTime + d);
+        }
+
+        function playScream() {
+            if (!audioCtx || audioCtx.state !== 'running') return;
+            const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+            o.type = 'sawtooth';
+            o.frequency.setValueAtTime(800, audioCtx.currentTime);
+            o.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 1.2);
+            g.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1.2);
+            o.connect(g); g.connect(audioCtx.destination);
+            o.start(); o.stop(audioCtx.currentTime + 1.2);
+        }
+
+        const GRAVITY = 0.8, JUMP = -18.5, WIN_H = 3000, GAP = 100;
+        let player = { x: 180, y: 0, w: 36, h: 36, vx: 0, vy: 0, blink: false, state: 'normal', squish: 1, stretch: 1, eyeOffset: 0 };
+        let platforms = [], score = 0, lastCheck = 0, gameActive = false;
+
+        const milestones = {
+            500: { t: "ASE Designation", d: "Current Role: Associate Software Engineer at Accenture." },
+            1000: { t: "Tech Mastery", d: "SEO Optimization and Enterprise AI integration." },
+            1500: { t: "Web Development", d: "Scalable backend logic in Java, Python, and SQL." },
+            2000: { t: "Psychology Project", d: "Creative Expression Research & Analysis." },
+            2500: { t: "Environmental Study", d: "Behavior research among Indian youth." }
+        };
+
+        function createPlatforms() {
+            platforms = [{ x: 0, y: canvas.height - 25, w: canvas.width, h: 40, isGround: true }];
+            for(let i = 1; i < 12; i++) {
+                platforms.push({ x: Math.random() * 315, y: (canvas.height - 25) - (i * (GAP + 15)), w: 85, h: 15 });
+            }
+        }
+
+        function resetToLastCheck() {
+            document.getElementById('fail-screen').style.display = 'none';
+            score = lastCheck; 
+            createPlatforms();
+            player.x = 200 - 18; 
+            player.y = canvas.height - 25 - 36;
+            player.vx = 0; player.vy = 0; player.state = 'normal';
+            gameActive = true;
+            loop(); // Start the loop explicitly
+        }
+
+        function update() {
+            if(!gameActive) return;
+            if (keys['ArrowLeft'] || keys['KeyA']) { player.vx = -11; player.eyeOffset = -4; }
+            else if (keys['ArrowRight'] || keys['KeyD']) { player.vx = 11; player.eyeOffset = 4; }
+            else { player.vx *= 0.85; player.eyeOffset *= 0.8; }
+            player.x += player.vx; player.vy += GRAVITY; player.y += player.vy;
+            if (player.vy < 0) { player.stretch = 1.15; player.squish = 0.85; }
+            else if (player.vy > 2) { player.stretch = 0.95; player.squish = 1.05; }
+            else { player.stretch = 1; player.squish = 1; }
+            if (player.x > canvas.width) player.x = -player.w;
+            if (player.x < -player.w) player.x = canvas.width;
+            if (player.vy > 0) {
+                platforms.forEach(p => {
+                    if (player.x + player.w > p.x && player.x < p.x + p.w && player.y + player.h > p.y && player.y + player.h < p.y + p.h + 15) {
+                        player.vy = JUMP; player.y = p.y - player.h; sfx(350, 'sine', 0.1); player.squish = 0.7; 
+                    }
+                });
+            }
+            if (player.y < 280) {
+                let d = 280 - player.y; player.y = 280; score += Math.floor(d / 1.1);
+                platforms.forEach(p => {
+                    p.y += d;
+                    if (p.y > canvas.height) {
+                        let top = Math.min(...platforms.map(pl => pl.y));
+                        p.y = top - (GAP + 15); p.x = Math.random() * 315; p.isGround = false;
+                    }
+                });
+            }
+            [500, 1000, 1500, 2000, 2500].forEach(m => {
+                if (score >= m && lastCheck < m) {
+                    lastCheck = m; sfx(600, 'square', 0.15);
+                    document.getElementById('m-title').innerText = milestones[m].t;
+                    document.getElementById('m-desc').innerText = milestones[m].d;
+                    document.getElementById('milestone-ui').classList.add('milestone-active');
+                    setTimeout(() => document.getElementById('milestone-ui').classList.remove('milestone-active'), 5000);
+                }
+            });
+            if (score >= WIN_H) { gameActive = false; triggerWin(); }
+            if (player.y > canvas.height + 60) {
+                gameActive = false; player.state = 'scared';
+                playScream();
+                document.getElementById('checkpoint-msg').innerText = `Checkpoint: ${lastCheck}m.`;
+                setTimeout(() => document.getElementById('fail-screen').style.display = 'flex', 500);
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            platforms.forEach(p => {
+                ctx.fillStyle = p.isGround ? '#1e293b' : 'rgba(255, 255, 255, 0.12)';
+                ctx.beginPath(); ctx.roundRect(p.x, p.y, p.w, p.h, 6); ctx.fill();
+            });
+            ctx.save();
+            ctx.translate(player.x + player.w/2, player.y + player.h/2);
+            ctx.scale(player.squish, player.stretch);
+            ctx.fillStyle = '#a100ff';
+            ctx.beginPath(); ctx.roundRect(-player.w/2, -player.h/2, player.w, player.h, 10); ctx.fill();
+            if (!player.blink) {
+                ctx.fillStyle = 'white';
+                let eyeS = player.state === 'scared' ? 10 : 7.5;
+                ctx.beginPath(); ctx.arc(-8 + player.eyeOffset * 0.5, -4, eyeS, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(8 + player.eyeOffset * 0.5, -4, eyeS, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#0a0a0c';
+                ctx.beginPath(); ctx.arc(-8 + player.eyeOffset, -4, 3, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(8 + player.eyeOffset, -4, 3, 0, Math.PI * 2); ctx.fill();
+            }
+            ctx.restore();
+            ctx.fillStyle = 'white'; ctx.font = '800 20px Montserrat'; ctx.fillText(`${score}m`, 25, 45);
+        }
+
+        function triggerWin() {
+            confetti({ particleCount: 250, spread: 100, origin: { y: 0.6 } });
+            setTimeout(() => {
+                document.getElementById('game-wrapper').style.display = 'none';
+                document.getElementById('final-portfolio').style.display = 'block';
+                document.body.style.overflow = 'auto';
+                const obs = new IntersectionObserver((es) => {
+                    es.forEach(e => { if (e.isIntersecting) e.target.classList.add('revealed'); });
+                }, { threshold: 0.1 });
+                document.querySelectorAll('.reveal-section').forEach(el => obs.observe(el));
+            }, 1200);
+        }
+
+        function loop() {
+            if (!gameActive) return;
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        window.onkeydown = (e) => keys[e.code] = true;
+        window.onkeyup = (e) => keys[e.code] = false;
+
+        document.getElementById('start-btn').addEventListener('click', () => {
+            initAudio();
+            document.getElementById('start-overlay').style.display = 'none';
+            resetToLastCheck();
+        });
+
+        document.getElementById('retry-btn').addEventListener('click', () => {
+            initAudio();
+            resetToLastCheck();
+        });
+
+        const lBtn = document.getElementById('leftBtn'), rBtn = document.getElementById('rightBtn');
+        lBtn.addEventListener('touchstart', (e) => { e.preventDefault(); keys['ArrowLeft'] = true; });
+        lBtn.addEventListener('touchend', () => keys['ArrowLeft'] = false);
+        rBtn.addEventListener('touchstart', (e) => { e.preventDefault(); keys['ArrowRight'] = true; });
+        rBtn.addEventListener('touchend', () => keys['ArrowRight'] = false);
+
+        setInterval(() => { if(gameActive) player.blink = true; setTimeout(() => player.blink = false, 150); }, 3000);
+    </script>
+</body>
+</html>
